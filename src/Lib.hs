@@ -80,7 +80,7 @@ avg xs = fromIntegral (sum xs) / fromIntegral (length xs)
 disperse1 :: (Real a) =>Double -> [a] -> Double
 disperse1 _ [] = 0
 disperse1 avg (x:xs) = ((realToFrac x - avg)^^2 + disperse1 avg xs)
-disperse xs = disperse1 (avg xs) xs / fromIntegral (length xs)
+disperse xs = disperse1 (avg xs) xs / fromIntegral (length xs - 1)
 
 moda :: (Ord a, Real b) => [(b,a)] -> [(b,a)]
 moda = concat . take 1
