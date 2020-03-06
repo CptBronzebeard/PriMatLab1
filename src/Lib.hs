@@ -77,9 +77,10 @@ distribLaw xs = map (\(x, y) -> (realToFrac x, fromIntegral y / fromIntegral (sn
 
 avg xs = fromIntegral (sum xs) / fromIntegral (length xs)
 
-disperse :: (Real a) => Int -> Double -> [a] -> Double
-disperse _ _ [] = 0
-disperse len avg (x:xs) = ((realToFrac x - avg)^^2 + disperse len avg xs) / fromIntegral (length arr)
+disperse1 :: (Real a) =>Double -> [a] -> Double
+disperse1 _ [] = 0
+disperse1 avg (x:xs) = ((realToFrac x - avg)^^2 + disperse1 avg xs)
+disperse xs = disperse1 (avg xs) xs / fromIntegral (length xs)
 
 moda :: (Ord a, Real b) => [(b,a)] -> [(b,a)]
 moda = concat . take 1
@@ -101,7 +102,7 @@ pointProb xs = map (\(x, y) -> (x, y / sum (map snd xs))) xs
 
 forExpected = pointProb $ map (\(x,y) -> (fromIntegral x, fromIntegral y)) $ cntEq arr
 exVal xs = foldr (\(x, y) -> (+) (x * y)) 0 xs
-sqAvg xs = sqrt $ disperse (length xs) (avg xs) xs
+sqAvg xs = sqrt $ disperse xs
 laplas x
   | x >= 0 = res
   | otherwise = -res
