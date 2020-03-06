@@ -1,0 +1,5 @@
+.stack-work/
+MathTest.cabal
+*~
+# Project exclude paths
+/out/
