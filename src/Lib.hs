@@ -75,11 +75,13 @@ cntEq xs = [(x, (length . filter (==x)) xs)| x <- sort (nub xs)]
 distribLaw :: (Real a, Fractional b) => [(a,Int)] -> [(b,b)]
 distribLaw xs = map (\(x, y) -> (realToFrac x, fromIntegral y / fromIntegral (snd (last xs)))) xs
 
-avg xs = fromIntegral (sum xs) / fromIntegral (length xs)
+avg xs = realToFrac (sum xs) / fromIntegral (length xs)
 
 disperse1 :: (Real a) =>Double -> [a] -> Double
 disperse1 _ [] = 0
 disperse1 avg (x:xs) = ((realToFrac x - avg)^^2 + disperse1 avg xs)
+
+disperse :: (Real a) => [a] -> Double
 disperse xs = disperse1 (avg xs) xs / fromIntegral (length xs - 1)
 
 moda :: (Ord a, Real b) => [(b,a)] -> [(b,a)]
@@ -100,7 +102,7 @@ groupWithSize (x:y:xs)
 pointProb :: (Fractional a) => [(a,a)] -> [(a,a)]
 pointProb xs = map (\(x, y) -> (x, y / sum (map snd xs))) xs
 
-forExpected = pointProb $ map (\(x,y) -> (fromIntegral x, fromIntegral y)) $ cntEq arr
+forExpected = pointProb $ map (\(x,y) -> (realToFrac x, realToFrac y)) $ cntEq arr
 exVal xs = foldr (\(x, y) -> (+) (x * y)) 0 xs
 sqAvg xs = sqrt $ disperse xs
 laplas x
@@ -110,11 +112,18 @@ laplas x
     res = snd $ minimumBy (\(n1, _) (n2, _) -> abs (n1 - abs x) `compare` abs (n2 - abs x)) laplasData
 
 normalProb a b sAvg exV = laplas ((b-exV)/sAvg) - laplas ((a-exV)/sAvg)
-forPear = groupWithSize $ group $ sort $ map fromIntegral arr
+forPear = groupWithSize $ group $ sort $ map realToFrac arr
 pearsonSq :: [[Double]] -> Double -> Double -> Double
-pearsonSq (x:y:xs) sAvg exV = normalProb (head x) (head y) sAvg exV + pearsonSq xs sAvg exV
-pearsonSq (x:xs) sAvg exV = normalProb (head x) (last x) sAvg exV
+pearsonSq (x:y:xs) sAvg exV =
+  (realToFrac (length x) - (realToFrac (length x) * normalProb (head x) (head y) sAvg exV)) ^^ 2 /
+  (realToFrac (length x) * normalProb (head x) (head y) sAvg exV) +
+  pearsonSq xs sAvg exV
+pearsonSq (x:xs) sAvg exV = 
+  (realToFrac (length x) - 
+  (realToFrac (length x) * normalProb (head x) (last x) sAvg exV)) ^^ 2 / 
+  (realToFrac (length x) * normalProb (head x) (last x) sAvg exV)
 pearsonSq [] _ _ = 0.0
+
 
 mn :: (Fractional a, Integral b) => [b] -> b -> a
 mn xs n = foldr (\x -> (+) $(realToFrac x - avg xs) ^^ n) 0.0 xs
@@ -131,3 +140,8 @@ quartile xs num
   | mod (length xs) num == 0 = realToFrac (xss !! (((length xss) `div` 4) * num))
   | otherwise =(realToFrac (xss !! (((length xss) `div` 4) * num)) + realToFrac (xss !! ((((length xss) `div` 4) * num)+1))) / 2.0
   where xss = sort xs
+
+expectedValue xs = exVal $ pointProb $ map (\(x,y) -> (realToFrac x, realToFrac y)) $ cntEq xs
+pearson :: (Real a) => [a] -> Double
+pearson xs = pearsonSq (groupWithSize $ group $ sort $ map realToFrac xs) (sqAvg xs) (expectedValue xs)
+pearsonFreedom xs = length $ groupWithSize $ group $ sort $ map realToFrac xs
